@@ -14,13 +14,14 @@ from datetime import datetime, timedelta
 
 # 确保能 import imsafe 包
 #sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# 确保能 import imsafe 包
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
-cd C:\Users\lenovo\Desktop\sheji
-git add webapp/app.py
-git commit -m "fix path"
-git push
 
 from imsafe.ai_framework import get_vision_framework, SiteVisionFramework
+from imsafe.paths import get_project_root   # 新增这一行，用于截图功能
 from imsafe.database import connect_db, init_schema
 
 app = Flask(__name__)
@@ -126,9 +127,19 @@ def detect():
     if frame is None:
         return jsonify({'error': 'invalid image'}), 400
 
+    # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    # faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+    # Vercel 环境不支持级联分类器文件，使用画面中央模拟人脸框
+    h, w = frame.shape[:2]
+    faces = [(w//4, h//4, w//2, h//2)]
+
+
+
+
 
     results = []
     for (x, y, w, h) in faces:
