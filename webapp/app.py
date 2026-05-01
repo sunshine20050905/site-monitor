@@ -13,7 +13,12 @@ from PIL import Image
 from datetime import datetime, timedelta
 
 # 确保能 import imsafe 包
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+cd C:\Users\lenovo\Desktop\sheji
+git add webapp/app.py
+git commit -m "fix path"
+git push
 
 from imsafe.ai_framework import get_vision_framework, SiteVisionFramework
 from imsafe.database import connect_db, init_schema
