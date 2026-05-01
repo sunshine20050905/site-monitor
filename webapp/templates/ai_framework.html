@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>算法与训练</h2>
+    <div class="ai-status-panel">
+        <div class="ai-status-item">
+            <strong>服务状态：</strong>
+            <span id="ai-status" class="badge">检测中...</span>
+        </div>
+        <div class="ai-status-item">
+            <strong>已加载模型：</strong>
+            <span id="ai-models">--</span>
+        </div>
+        <div class="ai-status-item">
+            <strong>内存使用：</strong>
+            <span id="ai-memory">--</span>
+        </div>
+        <div class="ai-status-item">
+            <strong>活跃训练任务：</strong>
+            <span id="ai-jobs">--</span>
+        </div>
+        <button class="btn btn-secondary" onclick="refreshAIStatus()">刷新状态</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>训练任务列表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>任务ID</th>
+                <th>状态</th>
+                <th>进度</th>
+                <th>准确率</th>
+                <th>损失</th>
+            </tr>
+        </thead>
+        <tbody id="training-tbody">
+            <tr><td colspan="5">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function refreshAIStatus() {
+        const res = await fetch('/api/ai_status');
+        const data = await res.json();
+
+        document.getElementById('ai-status').textContent = data.initialized ? '✅ 已初始化' : '❌ 未初始化';
+        document.getElementById('ai-status').className = data.initialized ? 'badge badge-success' : 'badge badge-danger';
+
+        document.getElementById('ai-models').textContent = data.models ? data.models.join(', ') : '无';
+        
+        if (data.memory_total) {
+            const usedGB = (data.memory_used / (1024*1024*1024)).toFixed(2);
+            const totalGB = (data.memory_total / (1024*1024*1024)).toFixed(2);
+            document.getElementById('ai-memory').textContent = `${usedGB}GB / ${totalGB}GB`;
+        } else {
+            document.getElementById('ai-memory').textContent = '无数据';
+        }
+        document.getElementById('ai-jobs').textContent = data.active_jobs || 0;
+    }
+
+    async function loadTrainingJobs() {
+        const res = await fetch('/api/training_jobs');
+        const jobs = await res.json();
+        const tbody = document.getElementById('training-tbody');
+
+        if (jobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">暂无训练任务</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = jobs.map(j => `
+            <tr>
+                <td>${j.id}</td>
+                <td>${j.status}</td>
+                <td>${(j.progress * 100).toFixed(0)}%</td>
+                <td>${j.accuracy ? j.accuracy.toFixed(4) : '--'}</td>
+                <td>${j.loss ? j.loss.toFixed(4) : '--'}</td>
+            </tr>
+        `).join('');
+    }
+
+    // 初始化
+    refreshAIStatus();
+    loadTrainingJobs();
+    // 定期刷新训练任务（每5秒）
+    setInterval(loadTrainingJobs, 5000);
+</script>
+
+<style>
+    .ai-status-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
+    }
+    .ai-status-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.9rem;
+    }
+    .badge-success { background: #059669; }
+    .badge-danger { background: #dc2626; }
+</style>
+{% endblock %}

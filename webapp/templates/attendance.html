@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>考勤记录</h2>
+    
+    <!-- 筛选工具栏 -->
+    <div class="toolbar">
+        <select id="filter-area">
+            <option value="">所有区域</option>
+            <option value="main_gate">主入口</option>
+            <option value="office">办公区</option>
+            <option value="workshop">车间区</option>
+            <option value="warehouse">仓库区</option>
+            <option value="construction">施工区</option>
+        </select>
+        <input type="date" id="filter-date" placeholder="日期">
+        <input type="text" id="filter-person" placeholder="人员姓名">
+        <button class="btn btn-primary" onclick="loadAttendance()">查询</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">清除</button>
+    </div>
+
+    <!-- 考勤表格 -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>人员</th>
+                <th>区域</th>
+                <th>进入时间</th>
+                <th>离开时间</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody id="attendance-tbody">
+            <tr><td colspan="6">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const areaMap = {
+        'main_gate': '主入口',
+        'office': '办公区',
+        'workshop': '车间区',
+        'warehouse': '仓库区',
+        'construction': '施工区'
+    };
+
+    async function loadAttendance() {
+        const area = document.getElementById('filter-area').value;
+        const date = document.getElementById('filter-date').value;
+        const person = document.getElementById('filter-person').value.trim();
+
+        const params = new URLSearchParams();
+        if (area) params.append('area', area);
+        if (date) params.append('date', date);
+        if (person) params.append('person', person);
+
+        const res = await fetch('/api/attendance?' + params.toString());
+        const records = await res.json();
+        const tbody = document.getElementById('attendance-tbody');
+
+        tbody.innerHTML = records.map(r => `
+            <tr>
+                <td>${r.id}</td>
+                <td>${r.name}</td>
+                <td>${areaMap[r.area] || r.area}</td>
+                <td>${r.entry_time || '--'}</td>
+                <td>${r.exit_time || '--'}</td>
+                <td style="color:${r.access_granted === '允许' ? 'green' : 'red'}">
+                    ${r.access_granted}
+                </td>
+            </tr>
+        `).join('');
+
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-area').value = '';
+        document.getElementById('filter-date').value = '';
+        document.getElementById('filter-person').value = '';
+        loadAttendance();
+    }
+
+    // 初始加载
+    loadAttendance();
+</script>
+
+<style>
+    select, input[type="date"], input[type="text"] {
+        padding: 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>工资结算</h2>
+    
+    <!-- 筛选工具栏 -->
+    <div class="toolbar">
+        <input type="month" id="filter-month" placeholder="月份">
+        <input type="text" id="filter-person" placeholder="人员姓名">
+        <button class="btn btn-primary" onclick="loadSalary()">查询</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">清除</button>
+    </div>
+
+    <!-- 工资表格 -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>人员</th>
+                <th>月份</th>
+                <th>工时(h)</th>
+                <th>日薪</th>
+                <th>时薪</th>
+                <th>绩效系数</th>
+                <th>总工资</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody id="salary-tbody">
+            <tr><td colspan="9">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadSalary() {
+        const month = document.getElementById('filter-month').value;
+        const person = document.getElementById('filter-person').value.trim();
+
+        const params = new URLSearchParams();
+        if (month) params.append('month', month);
+        if (person) params.append('person', person);
+
+        const res = await fetch('/api/salary?' + params.toString());
+        const records = await res.json();
+        const tbody = document.getElementById('salary-tbody');
+
+        tbody.innerHTML = records.map(s => `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.name}</td>
+                <td>${s.month}</td>
+                <td>${s.working_hours?.toFixed(1) || 0}</td>
+                <td>${s.daily_rate || 0}</td>
+                <td>${s.hourly_rate || 0}</td>
+                <td>${s.performance_factor || 1.0}</td>
+                <td>${s.total_salary?.toFixed(2) || 0}</td>
+                <td>${s.status}</td>
+            </tr>
+        `).join('');
+
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9">暂无数据</td></tr>';
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-month').value = '';
+        document.getElementById('filter-person').value = '';
+        loadSalary();
+    }
+
+    // 初始加载
+    loadSalary();
+</script>
+
+<style>
+    input[type="month"], input[type="text"] {
+        padding: 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

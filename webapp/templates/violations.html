@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>违规记录</h2>
+    
+    <!-- 筛选工具栏 -->
+    <div class="toolbar">
+        <select id="filter-type">
+            <option value="">所有类型</option>
+            <option value="no_helmet">未戴安全帽</option>
+            <option value="smoking">抽烟</option>
+            <option value="no_permission">权限不足</option>
+        </select>
+        <input type="date" id="filter-from" placeholder="起始日期">
+        <input type="date" id="filter-to" placeholder="结束日期">
+        <button class="btn btn-primary" onclick="loadViolations()">查询</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">清除</button>
+    </div>
+
+    <!-- 违规表格 -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>人员</th>
+                <th>区域</th>
+                <th>违规类型</th>
+                <th>时间</th>
+                <th>状态</th>
+                <th>截图</th>
+            </tr>
+        </thead>
+        <tbody id="violations-tbody">
+            <tr><td colspan="7">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 截图查看模态框 -->
+<div id="screenshot-modal" class="modal" style="display:none;">
+    <div class="modal-content card">
+        <span class="close" onclick="closeScreenshot()">&times;</span>
+        <h3>违规截图</h3>
+        <img id="screenshot-img" src="" alt="违规截图" style="max-width:100%; max-height:400px;">
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const typeMap = {
+        'no_helmet': '未戴安全帽',
+        'smoking': '抽烟',
+        'no_permission': '权限不足'
+    };
+    const areaMap = {
+        'main_gate': '主入口',
+        'office': '办公区',
+        'workshop': '车间区',
+        'warehouse': '仓库区',
+        'construction': '施工区'
+    };
+
+    async function loadViolations() {
+        const type = document.getElementById('filter-type').value;
+        const from = document.getElementById('filter-from').value;
+        const to = document.getElementById('filter-to').value;
+
+        const params = new URLSearchParams();
+        if (type) params.append('type', type);
+        if (from) params.append('from', from);
+        if (to) params.append('to', to);
+
+        const res = await fetch('/api/violations?' + params.toString());
+        const records = await res.json();
+        const tbody = document.getElementById('violations-tbody');
+
+        tbody.innerHTML = records.map(v => `
+            <tr>
+                <td>${v.id}</td>
+                <td>${v.name}</td>
+                <td>${areaMap[v.area] || v.area}</td>
+                <td>${typeMap[v.violation_type] || v.violation_type}</td>
+                <td>${v.time}</td>
+                <td>${v.status}</td>
+                <td>
+                    ${v.screenshot ? 
+                        `<button class="btn btn-secondary" onclick="viewScreenshot(${v.id})">查看</button>` 
+                        : '无'}
+                </td>
+            </tr>
+        `).join('');
+
+        if (records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7">暂无数据</td></tr>';
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-type').value = '';
+        document.getElementById('filter-from').value = '';
+        document.getElementById('filter-to').value = '';
+        loadViolations();
+    }
+
+    function viewScreenshot(id) {
+        const img = document.getElementById('screenshot-img');
+        img.src = `/api/violation_screenshot/${id}`;
+        document.getElementById('screenshot-modal').style.display = 'flex';
+    }
+
+    function closeScreenshot() {
+        document.getElementById('screenshot-modal').style.display = 'none';
+        document.getElementById('screenshot-img').src = '';
+    }
+
+    // 初始加载
+    loadViolations();
+</script>
+
+<style>
+    select, input[type="date"] {
+        padding: 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+    .modal {
+        display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+        width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+        justify-content: center; align-items: center;
+    }
+    .modal-content {
+        width: 500px; position: relative;
+    }
+    .close {
+        position: absolute; top: 10px; right: 15px;
+        font-size: 24px; font-weight: bold; cursor: pointer;
+    }
+</style>
+{% endblock %}

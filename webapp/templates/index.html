@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>门禁监控</h2>
+    <div class="monitor-container">
+        <!-- 左侧：视频与结果 -->
+        <div class="video-section">
+            <div class="video-wrapper">
+                <video id="live-video" autoplay playsinline></video>
+                <canvas id="overlay-canvas" style="display:none;"></canvas>
+                <div id="result-annotations"></div>
+            </div>
+            <div class="video-controls">
+                <button id="btn-open-camera" class="btn btn-primary">打开摄像头</button>
+                <button id="btn-capture" class="btn btn-success" disabled>📷 拍照检测</button>
+                <button id="btn-close-camera" class="btn btn-danger" disabled>关闭摄像头</button>
+            </div>
+            <div id="detection-summary" class="card">
+                <p>检测结果将显示在这里。</p>
+            </div>
+        </div>
+        <!-- 右侧：快速信息 -->
+        <div class="info-section">
+            <div class="card">
+                <h3>监控信息</h3>
+                <p><strong>状态：</strong><span id="monitor-status">未启动</span></p>
+                <p><strong>识别结果：</strong><span id="identify-result">--</span></p>
+                <p><strong>违规提示：</strong><span id="violation-hint">--</span></p>
+            </div>
+            <div class="card">
+                <h3>上传图片检测</h3>
+                <input type="file" id="file-input" accept="image/*" hidden>
+                <button id="btn-upload" class="btn btn-secondary">📁 选择图片</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/monitor.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工地安全监控系统 - Web演示</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">工地人员识别与安全监控</div>
+        <ul class="nav-links">
+            <li><a href="/">门禁监控</a></li>
+            <li><a href="/persons">人员管理</a></li>
+            <li><a href="/attendance">考勤记录</a></li>
+            <li><a href="/violations">违规记录</a></li>
+            <li><a href="/salary">工资结算</a></li>
+            <li><a href="/stats">数据统计</a></li>
+            <li><a href="/ai_framework">算法与训练</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

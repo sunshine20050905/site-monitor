@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+    <h2>人员管理</h2>
+    <!-- 搜索和添加按钮 -->
+    <div class="toolbar">
+        <input type="text" id="search-input" placeholder="搜索姓名/工号..." class="form-input">
+        <button class="btn btn-success" onclick="showAddModal()">+ 添加人员</button>
+        <button class="btn btn-secondary" onclick="loadPersons()">刷新列表</button>
+    </div>
+    
+    <!-- 人员列表表格 -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>姓名</th>
+                <th>工号</th>
+                <th>RFID卡号</th>
+                <th>权限等级</th>
+            </tr>
+        </thead>
+        <tbody id="persons-tbody">
+            <tr><td colspan="5">加载中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- 添加人员模态框 -->
+<div id="add-modal" class="modal" style="display:none;">
+    <div class="modal-content card">
+        <span class="close" onclick="closeAddModal()">&times;</span>
+        <h3>添加人员</h3>
+        <div class="form-grid">
+            <div>
+                <label>姓名</label>
+                <input type="text" id="add-name" required>
+            </div>
+            <div>
+                <label>工号</label>
+                <input type="text" id="add-empid" required>
+            </div>
+            <div>
+                <label>RFID卡号</label>
+                <input type="text" id="add-rfid">
+            </div>
+            <div>
+                <label>权限等级</label>
+                <select id="add-perm">
+                    <option value="0">无权限</option>
+                    <option value="1">A级（办公区）</option>
+                    <option value="2">B级（车间区）</option>
+                    <option value="3">C级（仓库区）</option>
+                    <option value="4">D级（施工区）</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="addPerson()">提交</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 加载人员列表
+    async function loadPersons() {
+        const keyword = document.getElementById('search-input').value || '';
+        const res = await fetch('/api/persons');
+        const persons = await res.json();
+        const filtered = keyword ? persons.filter(p => 
+            p.name.includes(keyword) || p.employee_id.includes(keyword)) : persons;
+        const tbody = document.getElementById('persons-tbody');
+        const permMap = {0:'无权限',1:'A级',2:'B级',3:'C级',4:'D级'};
+        tbody.innerHTML = filtered.map(p => `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.name}</td>
+                <td>${p.employee_id}</td>
+                <td>${p.rfid_card || '--'}</td>
+                <td>${permMap[p.permission_level] || p.permission_level}</td>
+            </tr>
+        `).join('');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+        }
+    }
+
+    // 搜索框实时过滤
+    document.getElementById('search-input').addEventListener('input', loadPersons);
+
+    // 模态框操作
+    function showAddModal() {
+        document.getElementById('add-modal').style.display = 'flex';
+    }
+    function closeAddModal() {
+        document.getElementById('add-modal').style.display = 'none';
+        clearAddForm();
+    }
+    function clearAddForm() {
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-empid').value = '';
+        document.getElementById('add-rfid').value = '';
+        document.getElementById('add-perm').value = '0';
+    }
+
+    // 添加人员
+    async function addPerson() {
+        const name = document.getElementById('add-name').value.trim();
+        const empid = document.getElementById('add-empid').value.trim();
+        const rfid = document.getElementById('add-rfid').value.trim();
+        const perm = parseInt(document.getElementById('add-perm').value);
+        if (!name || !empid) {
+            alert('姓名和工号不能为空');
+            return;
+        }
+        const res = await fetch('/api/persons', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, employee_id: empid, rfid_card: rfid, permission_level: perm })
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert('添加失败: ' + data.error);
+        } else {
+            alert('添加成功');
+            closeAddModal();
+            loadPersons();
+        }
+    }
+
+    // 初始加载
+    loadPersons();
+</script>
+
+<style>
+    /* 模态框样式 */
+    .modal {
+        display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+        width: 100%; height: 100%; background: rgba(0,0,0,0.4);
+        justify-content: center; align-items: center;
+    }
+    .modal-content {
+        width: 400px; position: relative;
+    }
+    .close {
+        position: absolute; top: 10px; right: 15px;
+        font-size: 24px; font-weight: bold; cursor: pointer;
+    }
+    .form-input {
+        padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;
+        width: 200px;
+    }
+</style>
+{% endblock %}

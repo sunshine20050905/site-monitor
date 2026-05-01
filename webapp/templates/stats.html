@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>数据统计</h2>
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="stat-persons">--</div>
+            <div class="stat-label">注册人员</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value" id="stat-attendance">--</div>
+            <div class="stat-label">考勤记录</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-value" id="stat-violations">--</div>
+            <div class="stat-label">违规次数</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>考勤趋势图 (最近30天)</h3>
+    <canvas id="attendanceChart" width="400" height="200"></canvas>
+</div>
+
+<div class="card">
+    <h3>违规类型分布</h3>
+    <canvas id="violationChart" width="400" height="200"></canvas>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+{% endblock %}
